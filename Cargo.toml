@@ -1,0 +1,11 @@
+[package]
+name = "curl-history"
+version = "0.1.0"
+authors = ["Jan Kühle <jkuehle90@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+structopt = { version = "0.3.21", default-features = false }
+
+[build-dependencies]
+regex = "1.5.4"
