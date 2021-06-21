@@ -9,6 +9,12 @@ const STATUS_ERR_SPAWN: i32 = -2;
 include!(concat!(env!("OUT_DIR"), "/curl_opts.rs"));
 
 #[derive(Debug)]
+struct Request {
+    method: String,
+    url: String,
+}
+
+#[derive(Debug)]
 struct CapturingWriter<T> {
     data: Vec<u8>,
     writer: T,
@@ -44,18 +50,25 @@ where
 #[derive(Debug)]
 struct Output {
     out: String,
-    err: String,
 }
 
 impl Output {
-    fn new(out: String, err: String) -> Self {
-        Self { out, err }
+    fn new(out: String) -> Self {
+        Self { out }
     }
 }
 
 fn main() {
-    let opts = match Opts::from_args_safe() {
-        Ok(opts) => Some(opts),
+    let req = match Opts::from_args_safe() {
+        Ok(mut opts) => Some(Request {
+            method: opts.request.take().unwrap_or_else(|| "GET".into()),
+            url: opts
+                .url
+                .take()
+                .or_else(|| opts.url_arg.first().cloned())
+                .take()
+                .unwrap(),
+        }),
         Err(err) => {
             eprintln!("[curl-history] failed to parse args: {}", err);
             None
@@ -65,28 +78,16 @@ fn main() {
     let (exit_code, output) = match Command::new("curl")
         .args(env::args_os().skip(1))
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
         .spawn()
     {
         Ok(mut child) => {
             let mut child_stdout = child.stdout.take().expect("stdout is piped");
-            let stdout_handle = std::thread::spawn(move || {
-                let stdout = std::io::stdout();
-                let mut stdout_capture = CapturingWriter::new(stdout.lock());
-                let _ = std::io::copy(&mut child_stdout, &mut stdout_capture);
-                stdout_capture.into_string()
-            });
-
-            let mut child_stderr = child.stderr.take().expect("stderr is piped");
-            let stderr_handle = std::thread::spawn(move || {
-                let stderr = std::io::stderr();
-                let mut stderr_capture = CapturingWriter::new(stderr.lock());
-                let _ = std::io::copy(&mut child_stderr, &mut stderr_capture);
-                stderr_capture.into_string()
-            });
+            let stdout = std::io::stdout();
+            let mut stdout_capture = CapturingWriter::new(stdout.lock());
+            let _ = std::io::copy(&mut child_stdout, &mut stdout_capture);
 
             let status = child.wait().expect("command wasn't running");
-            let output = Output::new(stdout_handle.join().unwrap(), stderr_handle.join().unwrap());
+            let output = Output::new(stdout_capture.into_string());
             (status.code().unwrap_or(STATUS_ERR_SIGNAL), Some(output))
         }
         Err(err) => {
@@ -95,7 +96,7 @@ fn main() {
         }
     };
 
-    println!("REQUEST: {:#?}", opts);
+    println!("REQUEST: {:#?}", req);
     println!("RESPONSE: {:#?}", output);
 
     std::process::exit(exit_code);
