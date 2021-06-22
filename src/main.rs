@@ -1,6 +1,7 @@
 mod capturing_writer;
 
 use capturing_writer::CapturingWriter;
+use sqlx::{Connection as _, SqliteConnection};
 use std::env;
 use std::process::{Command, Stdio};
 use structopt::StructOpt;
@@ -57,13 +58,31 @@ fn try_run_curl() -> Result<CurlResult, BoxError> {
     })
 }
 
-fn save_request(req: Request, res: CurlResult) -> Result<(), BoxError> {
+async fn save_request(req: Request, res: CurlResult) -> Result<(), BoxError> {
     println!("REQ: {:#?}", req);
     println!("RES: {:#?}", res);
-    todo!()
+
+    let mut conn = SqliteConnection::connect(
+        &std::env::var("DATABASE_URL").unwrap_or_else(|_| "history.db".into()),
+    )
+    .await?;
+    let _res = sqlx::query!(
+        "
+        INSERT INTO history (method, url, output)
+        VALUES (?, ?, ?)
+        ",
+        req.method,
+        req.url,
+        res.output
+    )
+    .execute(&mut conn)
+    .await?;
+
+    Ok(())
 }
 
-fn main() {
+#[async_std::main]
+async fn main() {
     let req = try_parse_request();
     if let Err(ref err) = req {
         eprintln!("[curl-history] failed to parse request from args: {}", err);
@@ -79,7 +98,7 @@ fn main() {
     }
 
     if let (Ok(req), Ok(res)) = (req, res) {
-        if let Err(err) = save_request(req, res) {
+        if let Err(err) = save_request(req, res).await {
             eprintln!("[curl-history] failed to save request: {}", err);
         }
     }

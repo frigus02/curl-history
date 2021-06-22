@@ -5,6 +5,8 @@ authors = ["Jan Kühle <jkuehle90@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+async-std = { version = "1.9.0", features = ["attributes"] }
+sqlx = { version = "0.5.5", features = ["runtime-async-std-native-tls", "sqlite"] }
 structopt = { version = "0.3.21", default-features = false }
 
 [build-dependencies]
