@@ -59,7 +59,17 @@ fn try_run_curl() -> Result<CurlResult, BoxError> {
 }
 
 async fn ensure_db() -> Result<SqlitePool, BoxError> {
-    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:history.db".into());
+    let database_path: String = if let Some(config_dir) = dirs::config_dir() {
+        let dir = config_dir.join("curl-history");
+        std::fs::create_dir_all(&dir)?;
+        dir.join("history.db")
+            .to_str()
+            .expect("config dir should be valid utf8 string")
+            .into()
+    } else {
+        "history.db".into()
+    };
+    let database_url = format!("sqlite:{}", database_path);
     Sqlite::create_database(&database_url).await?;
     let pool = SqlitePool::connect(&database_url).await?;
     sqlx::migrate!().run(&pool).await?;
@@ -67,15 +77,10 @@ async fn ensure_db() -> Result<SqlitePool, BoxError> {
 }
 
 async fn save_request(req: Request, res: CurlResult) -> Result<(), BoxError> {
-    println!("REQ: {:#?}", req);
-    println!("RES: {:#?}", res);
-
     let pool = ensure_db().await?;
     let _res = sqlx::query!(
-        "
-        INSERT INTO history (method, url, output)
-        VALUES (?, ?, ?)
-        ",
+        "INSERT INTO history (method, url, output)
+        VALUES (?, ?, ?)",
         req.method,
         req.url,
         res.output
