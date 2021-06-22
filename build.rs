@@ -27,14 +27,12 @@ fn main() {
                 params.push(format!("short = \"{}\"", short.as_str()));
             }
             format!(
-                r#"
-                /// {}
+                r#"/// {}
                 #[structopt({})]
-                {}: Option<{}>,
-                "#,
+                {}: Option<{}>,"#,
                 desc,
                 params.join(", "),
-                long.replace('-', "_").replace('.', "_"),
+                long.replace(&['-', '.'][..], "_"),
                 if value.is_some() { "String" } else { "bool" }
             )
         })
