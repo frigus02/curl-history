@@ -1,7 +1,7 @@
 mod capturing_writer;
 
 use capturing_writer::CapturingWriter;
-use sqlx::{Connection as _, SqliteConnection};
+use sqlx::{migrate::MigrateDatabase as _, Sqlite, SqlitePool};
 use std::env;
 use std::process::{Command, Stdio};
 use structopt::StructOpt;
@@ -58,14 +58,19 @@ fn try_run_curl() -> Result<CurlResult, BoxError> {
     })
 }
 
+async fn ensure_db() -> Result<SqlitePool, BoxError> {
+    let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:history.db".into());
+    Sqlite::create_database(&database_url).await?;
+    let pool = SqlitePool::connect(&database_url).await?;
+    sqlx::migrate!().run(&pool).await?;
+    Ok(pool)
+}
+
 async fn save_request(req: Request, res: CurlResult) -> Result<(), BoxError> {
     println!("REQ: {:#?}", req);
     println!("RES: {:#?}", res);
 
-    let mut conn = SqliteConnection::connect(
-        &std::env::var("DATABASE_URL").unwrap_or_else(|_| "history.db".into()),
-    )
-    .await?;
+    let pool = ensure_db().await?;
     let _res = sqlx::query!(
         "
         INSERT INTO history (method, url, output)
@@ -75,7 +80,7 @@ async fn save_request(req: Request, res: CurlResult) -> Result<(), BoxError> {
         req.url,
         res.output
     )
-    .execute(&mut conn)
+    .execute(&pool)
     .await?;
 
     Ok(())
