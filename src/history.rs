@@ -32,18 +32,34 @@ async fn search_by_id(id: i64) -> Result<Vec<Record>, BoxError> {
 
 async fn search_by_terms(terms: Vec<String>) -> Result<Vec<Record>, BoxError> {
     let pool = ensure_db().await?;
-    let prepared_term = terms[0]
-        .replace('\\', "\\\\")
-        .replace('%', "\\%")
-        .replace('_', "\\_");
-    let prepared_term = format!("%{}%", prepared_term);
-    let records = sqlx::query_as!(
-        Record,
-        "SELECT * FROM history WHERE method LIKE $1 ESCAPE '\\' OR url LIKE $1 ESCAPE '\\'",
-        prepared_term,
-    )
-    .fetch_all(&pool)
-    .await?;
+    let prepared_terms: Vec<_> = terms
+        .into_iter()
+        .map(|term| {
+            let escaped = term
+                .replace('\\', "\\\\")
+                .replace('%', "\\%")
+                .replace('_', "\\_");
+            format!("%{}%", escaped)
+        })
+        .collect();
+    let mut records = Vec::new();
+    for prepared_term in prepared_terms {
+        records.extend(
+            sqlx::query_as!(
+                Record,
+                "SELECT history.* FROM history
+                WHERE method LIKE $1 ESCAPE '\\'
+                OR url LIKE $1 ESCAPE '\\'",
+                prepared_term,
+            )
+            .fetch_all(&pool)
+            .await?,
+        );
+    }
+
+    records.sort_unstable_by_key(|record| std::cmp::Reverse(record.id));
+    records.dedup_by_key(|record| record.id);
+
     Ok(records)
 }
 
