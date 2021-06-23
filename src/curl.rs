@@ -36,6 +36,7 @@ struct CurlResult {
 
 fn try_run_curl(args: &[OsString]) -> Result<CurlResult, BoxError> {
     let mut child = Command::new("curl")
+        .arg("--no-progress-meter")
         .args(args)
         .stdout(Stdio::piped())
         .spawn()?;
