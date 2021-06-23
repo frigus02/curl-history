@@ -32,11 +32,15 @@ async fn search_by_id(id: i64) -> Result<Vec<Record>, BoxError> {
 
 async fn search_by_terms(terms: Vec<String>) -> Result<Vec<Record>, BoxError> {
     let pool = ensure_db().await?;
+    let prepared_term = terms[0]
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    let prepared_term = format!("%{}%", prepared_term);
     let records = sqlx::query_as!(
         Record,
-        "SELECT * FROM history WHERE method LIKE ? OR url LIKE ?",
-        terms[0],
-        terms[0]
+        "SELECT * FROM history WHERE method LIKE $1 ESCAPE '\\' OR url LIKE $1 ESCAPE '\\'",
+        prepared_term,
     )
     .fetch_all(&pool)
     .await?;
