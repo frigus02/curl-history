@@ -27,7 +27,7 @@ fn try_parse_request() -> Result<Request, BoxError> {
             .url
             .take()
             .or_else(|| opts.url_arg.first().cloned())
-            .unwrap(),
+            .ok_or("missing url")?,
     })
 }
 
