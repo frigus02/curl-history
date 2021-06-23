@@ -29,11 +29,11 @@ fn main() {
             format!(
                 r#"/// {}
                 #[structopt({})]
-                {}: Option<{}>,"#,
+                {}: {},"#,
                 desc,
                 params.join(", "),
                 long.replace(&['-', '.'][..], "_"),
-                if value.is_some() { "String" } else { "bool" }
+                if value.is_some() { "Option<String>" } else { "bool" }
             )
         })
         .collect::<Vec<String>>()
@@ -45,6 +45,12 @@ fn main() {
         &dest_path,
         format!(
             r#"#[derive(Debug, structopt::StructOpt)]
+            #[structopt(settings = &[
+                structopt::clap::AppSettings::NoBinaryName,
+                structopt::clap::AppSettings::DisableVersion,
+                structopt::clap::AppSettings::DisableHelpFlags,
+                structopt::clap::AppSettings::DisableHelpSubcommand,
+            ])]
             struct Opts {{
                 {}
 

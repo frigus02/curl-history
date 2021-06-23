@@ -3,7 +3,7 @@ use crate::db::ensure_db;
 use crate::BoxError;
 use std::ffi::OsString;
 use std::process::{Command, Stdio};
-use structopt::StructOpt;
+use structopt::StructOpt as _;
 
 const STATUS_ERR_SIGNAL: i32 = -1;
 const STATUS_ERR_SPAWN: i32 = -2;
@@ -69,7 +69,7 @@ async fn save_history(req: Request, res: CurlResult) -> Result<(), BoxError> {
     Ok(())
 }
 
-pub async fn run_curl_and_save_history(args: Vec<OsString>) {
+pub async fn run_and_save_to_history(args: Vec<OsString>) {
     let req = try_parse_request(&args);
     if let Err(ref err) = req {
         eprintln!("[curl-history] failed to parse request from args: {}", err);

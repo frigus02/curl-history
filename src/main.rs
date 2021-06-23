@@ -1,6 +1,7 @@
 mod capturing_writer;
 mod curl;
 mod db;
+mod history;
 
 use std::env;
 
@@ -21,8 +22,8 @@ SUBCOMMANDS:
 #[async_std::main]
 async fn main() {
     match env::args().nth(1).as_deref() {
-        Some("curl") => curl::run_curl_and_save_history(env::args_os().skip(2).collect()).await,
-        Some("history") => todo!(),
+        Some("curl") => curl::run_and_save_to_history(env::args_os().skip(2).collect()).await,
+        Some("history") => history::search(env::args_os().skip(2).collect()).await,
         Some("-v") | Some("--version") => println!("{}", env!("CARGO_PKG_VERSION")),
         _ => println!(
             "{} {}\n{}",
