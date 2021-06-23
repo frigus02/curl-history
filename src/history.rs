@@ -9,6 +9,8 @@ use structopt::{clap::AppSettings, StructOpt};
 ])]
 struct Opts {
     #[structopt(long)]
+    include_output: bool,
+    #[structopt(long)]
     id: Option<i64>,
     #[structopt(required = true, conflicts_with = "id")]
     terms: Vec<String>,
@@ -63,6 +65,13 @@ async fn search_by_terms(terms: Vec<String>) -> Result<Vec<Record>, BoxError> {
     Ok(records)
 }
 
+fn print_record(record: Record, with_output: bool) {
+    println!("{} | {} {}", record.id, record.method, record.url);
+    if with_output {
+        println!("{}", record.output);
+    }
+}
+
 pub async fn search(args: Vec<OsString>) {
     let opts = Opts::from_iter(args);
     let result = if let Some(id) = opts.id {
@@ -71,7 +80,11 @@ pub async fn search(args: Vec<OsString>) {
         search_by_terms(opts.terms).await
     };
     match result {
-        Ok(records) => println!("{:#?}", records),
+        Ok(records) => {
+            for record in records {
+                print_record(record, opts.include_output);
+            }
+        }
         Err(err) => eprintln!("[curl-history] error searching history: {}", err),
     };
 }
