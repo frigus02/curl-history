@@ -1,6 +1,0 @@
-CREATE TABLE history (
-	id INTEGER PRIMARY KEY,
-	method TEXT NOT NULL,
-	url TEXT NOT NULL,
-	output TEXT NOT NULL
-)
