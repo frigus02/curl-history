@@ -4,26 +4,33 @@
 
 Wrapper for curl, which stores a history of all requests/responses
 
+## Install
+
+Download and source the shell script:
+
+```sh
+git clone --depth=1 https://github.com/frigus02/curl-history.git ~/.curl-history
+source ~/.curl-history/curl-history.sh
+```
+
+It will export 2 functions:
+
+- `curl`: a wrapper, which records the output of all executions into a file in `$CURL_HISTORY_DIR`
+- `curlh`: let's you search your curl history
+
+It requires the following external tools:
+
+- [fzf](https://github.com/junegunn/fzf)
+- [ripgrep](https://github.com/BurntSushi/ripgrep)
+
 ## Usage
 
-Install: TODO
+Use `curl` as usual.
 
-Setup:
+Then use `curlh example.com` to search for requests made to example.com.
 
-```
-alias curl=curl-history curl
-alias curlh=curl-history history
-```
+## Configuration
 
-Then use curl as usual
+You can set the following environment variables before sourcing the script.
 
-Then use `curlh example.com` to list requests made to example.com
-
-## Develop
-
-Requires a test database for compile time SQL query validation. Setup like this:
-
-```
-cargo install sqlx-cli
-sqlx database setup
-```
+- `$CURL_HISTORY_DIR` (defaults to `~/.config/curl-history`)
