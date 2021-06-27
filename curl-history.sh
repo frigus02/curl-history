@@ -1,5 +1,13 @@
 local actual_curl=$(command -pv curl)
 local config_dir=${CURL_HISTORY_DIR:-"$HOME/.config/curl-history"}
+local history_size=${CURL_HISTORY_SIZE:-1000}
+
+_curl_history_cleanup() {
+	rg --files --sortr path "$config_dir" | \
+		tail -n +$(($history_size + 1)) | \
+		tr '\n' '\0' | \
+		xargs --null --no-run-if-empty rm
+}
 
 curl() {
 	file_name="$(date +%s) ${@//[^-a-zA-Z0-9.:_= ]/~}"
@@ -10,6 +18,8 @@ curl() {
 	echo "" >>"$log_file"
 
 	"$actual_curl" "$@" | tee -a "$log_file"
+
+	_curl_history_cleanup
 }
 
 curlh() {
