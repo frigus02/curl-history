@@ -14,14 +14,16 @@ curl() {
 
 curlh() {
 	INITIAL_QUERY="$1"
-	RG_PREFIX="rg --files-with-matches --no-heading --smart-case "
+	RG_PREFIX="rg --files-with-matches --no-heading --smart-case"
+	CURL_FROM_FILENAME="sed -E 's/^([0-9]*)(.*)\.log\$/curl\2 @\1/'"
+	FILENAME_FROM_CURL="sed -E 's/curl(.*) @([0-9]*)/\2\1.log/'"
 	(
 		cd "$config_dir"
-		FZF_DEFAULT_COMMAND="$RG_PREFIX '$INITIAL_QUERY'" \
-			fzf --bind "change:reload:$RG_PREFIX {q} || true" \
+		FZF_DEFAULT_COMMAND="$RG_PREFIX '$INITIAL_QUERY' | $CURL_FROM_FILENAME" \
+			fzf --bind "change:reload:$RG_PREFIX {q} | $CURL_FROM_FILENAME || true" \
 				--disabled \
 				--query "$INITIAL_QUERY" \
 				--layout=reverse \
-				--preview 'cat {}'
+				--preview 'cat "$(echo {} | '"$FILENAME_FROM_CURL"')"'
 	)
 }
