@@ -37,3 +37,4 @@ Then use `curlh` to search for requests and view responses. Examples:
 You can set the following environment variables before sourcing the script.
 
 - `$CURL_HISTORY_DIR` (defaults to `~/.config/curl-history`)
+- `$CURL_HISTORY_SIZE` (defaults to `1000`)
