@@ -13,17 +13,36 @@ curl() {
 }
 
 curlh() {
-	INITIAL_QUERY="$1"
-	RG_PREFIX="rg --files-with-matches --no-heading --smart-case"
+	if [ "$1" = "-o" ]; then
+		SEARCH_OUTPUT=true
+		shift
+	else
+		SEARCH_OUTPUT=false
+	fi
+
+	INITIAL_QUERY="$*"
 	CURL_FROM_FILENAME="sed -E 's/^([0-9]*)(.*)\.log\$/curl\2 @\1/'"
 	FILENAME_FROM_CURL="sed -E 's/curl(.*) @([0-9]*)/\2\1.log/'"
-	(
-		cd "$config_dir"
-		FZF_DEFAULT_COMMAND="$RG_PREFIX '$INITIAL_QUERY' | $CURL_FROM_FILENAME" \
-			fzf --bind "change:reload:$RG_PREFIX {q} | $CURL_FROM_FILENAME || true" \
-				--disabled \
-				--query "$INITIAL_QUERY" \
-				--layout=reverse \
-				--preview 'cat "$(echo {} | '"$FILENAME_FROM_CURL"')"'
-	)
+	FZF_PREVIEW='cat "$(echo {} | '"$FILENAME_FROM_CURL"')"'
+
+	if [ "$SEARCH_OUTPUT" = true ]; then
+		RG_PREFIX="rg --files-with-matches --smart-case"
+		(
+			cd "$config_dir"
+			FZF_DEFAULT_COMMAND="$RG_PREFIX '$INITIAL_QUERY' | $CURL_FROM_FILENAME" \
+				fzf --bind "change:reload:$RG_PREFIX {q} | $CURL_FROM_FILENAME || true" \
+					--disabled \
+					--query "$INITIAL_QUERY" \
+					--layout=reverse \
+					--preview "$FZF_PREVIEW"
+		)
+	else
+		(
+			cd "$config_dir"
+			FZF_DEFAULT_COMMAND="rg --files | $CURL_FROM_FILENAME" \
+				fzf --query "$INITIAL_QUERY" \
+					--layout=reverse \
+					--preview "$FZF_PREVIEW"
+		)
+	fi
 }

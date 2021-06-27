@@ -27,7 +27,10 @@ It requires the following external tools:
 
 Use `curl` as usual.
 
-Then use `curlh example.com` to search for requests made to example.com.
+Then use `curlh` to search for requests and view responses. Examples:
+
+- `curlh example.com`: search for requests where "example.com" is part of the command
+- `curlh -o json`: search for requests where "json" is part of the command or output
 
 ## Configuration
 
