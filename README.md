@@ -15,7 +15,7 @@ source ~/.curl-history/curl-history.sh
 
 It will export 2 functions:
 
-- `curl`: a wrapper, which records the output of all executions into a file in `$CURL_HISTORY_DIR`
+- `curl`: wraps curl and records the output of all executions into a file
 - `curlh`: let's you search your curl history
 
 It requires the following external tools:
@@ -36,5 +36,6 @@ Then use `curlh` to search for requests and view responses. Examples:
 
 You can set the following environment variables before sourcing the script.
 
+- `$CURL_HISTORY_CURL` (defaults to `$(command -pv curl)`)
 - `$CURL_HISTORY_DIR` (defaults to `~/.config/curl-history`)
 - `$CURL_HISTORY_SIZE` (defaults to `1000`)

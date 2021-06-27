@@ -1,23 +1,23 @@
-local actual_curl=$(command -pv curl)
-local config_dir=${CURL_HISTORY_DIR:-"$HOME/.config/curl-history"}
-local history_size=${CURL_HISTORY_SIZE:-1000}
+CURL_HISTORY_CURL=${CURL_HISTORY_CURL:-"$(command -pv curl)"}
+CURL_HISTORY_DIR=${CURL_HISTORY_DIR:-"$HOME/.config/curl-history"}
+CURL_HISTORY_SIZE=${CURL_HISTORY_SIZE:-1000}
 
 _curl_history_cleanup() {
-	rg --files --sortr path "$config_dir" | \
-		tail -n +$(($history_size + 1)) | \
+	rg --files --sortr path "$CURL_HISTORY_DIR" | \
+		tail -n +$(($CURL_HISTORY_SIZE + 1)) | \
 		tr '\n' '\0' | \
 		xargs --null --no-run-if-empty rm
 }
 
 curl() {
 	file_name="$(date +%s) ${@//[^-a-zA-Z0-9.:_= ]/~}"
-	log_file="$config_dir/${file_name:0:50}.log"
+	log_file="$CURL_HISTORY_DIR/${file_name:0:50}.log"
 
-	mkdir -p "$config_dir"
+	mkdir -p "$CURL_HISTORY_DIR"
 	echo -E "curl $@" >"$log_file"
 	echo "" >>"$log_file"
 
-	"$actual_curl" "$@" | tee -a "$log_file"
+	"$CURL_HISTORY_CURL" "$@" | tee -a "$log_file"
 
 	_curl_history_cleanup
 }
@@ -38,7 +38,7 @@ curlh() {
 	if [ "$SEARCH_OUTPUT" = true ]; then
 		RG_PREFIX="rg --files-with-matches --smart-case"
 		(
-			cd "$config_dir"
+			cd "$CURL_HISTORY_DIR"
 			FZF_DEFAULT_COMMAND="$RG_PREFIX '$INITIAL_QUERY' | $CURL_FROM_FILENAME" \
 				fzf --bind "change:reload:$RG_PREFIX {q} | $CURL_FROM_FILENAME || true" \
 					--disabled \
@@ -48,7 +48,7 @@ curlh() {
 		)
 	else
 		(
-			cd "$config_dir"
+			cd "$CURL_HISTORY_DIR"
 			FZF_DEFAULT_COMMAND="rg --files | $CURL_FROM_FILENAME" \
 				fzf --query "$INITIAL_QUERY" \
 					--layout=reverse \
