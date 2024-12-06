@@ -6,7 +6,7 @@ _curl_history_cleanup() {
 	rg --files --sortr path "$CURL_HISTORY_DIR" | \
 		tail -n +$(($CURL_HISTORY_SIZE + 1)) | \
 		tr '\n' '\0' | \
-		xargs --null --no-run-if-empty rm
+		xargs -0 -r rm
 }
 
 curl() {
